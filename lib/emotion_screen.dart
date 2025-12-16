@@ -55,6 +55,13 @@ class EmotionCheckInScreen extends StatelessWidget {
                   onTap: () => _handleEmotionSelected(context, 'Sad'),
                 ),
                 EmotionCard(
+                  emotion: 'Neutral',
+                  emoji: '😐',
+                  color: Color(0xFFF5F5F5),
+                  accentColor: Color(0xFFEF626C),
+                  onTap: () => _handleEmotionSelected(context, 'Neutral'),
+                ),
+                EmotionCard(
                   emotion: 'Anxious',
                   emoji: '😰',
                   color: Color(0xFFF3E5F5),

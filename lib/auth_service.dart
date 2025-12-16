@@ -1,62 +1,51 @@
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthService {
-  static const String _isLoggedInKey = 'isLoggedIn';
-  static const String _usernameKey = 'username';
-  static const String _emailKey = 'email';
-  static const String _passwordKey = 'password';
+  final SupabaseClient _supabase = Supabase.instance.client;
 
   Future<bool> isLoggedIn() async {
-    final prefs = await SharedPreferences.getInstance();
-    final loggedIn = prefs.getBool(_isLoggedInKey);
+    return _supabase.auth.currentUser != null;
+  }
 
-    if (loggedIn == null) {return false;}return loggedIn;
-  }
   Future<String?> getCurrentUsername() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_usernameKey);
+    final user = _supabase.auth.currentUser;
+    if (user == null) return null;
+    return user.userMetadata?['username'];
   }
-  Future<bool> signUp({
+
+  Future<String?> getCurrentUserId() async {
+    return _supabase.auth.currentUser?.id;
+  }
+
+  Future<AuthResponse> signUp({
     required String username,
     required String email,
     required String password,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_usernameKey, username);
-    await prefs.setString(_emailKey, email);
-    await prefs.setString(_passwordKey, password);
-    await prefs.setBool(_isLoggedInKey, true);
-    return true;
+    final response = await _supabase.auth.signUp(
+      email: email,
+      password: password,
+      data: {'username': username},
+    );
+    return response;
   }
 
-  Future<bool> login({
+  Future<AuthResponse> login({
     required String email,
     required String password,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
-
-    final storedEmail = prefs.getString(_emailKey);
-    final storedPassword = prefs.getString(_passwordKey);
-
-    if (storedEmail == email && storedPassword == password) {
-      await prefs.setBool(_isLoggedInKey, true);
-      return true;
-    }
-    return false;
+    final response = await _supabase.auth.signInWithPassword(
+      email: email,
+      password: password,
+    );
+    return response;
   }
 
   Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_isLoggedInKey, false);
+    await _supabase.auth.signOut();
   }
 
   Future<bool> hasAccount() async {
-    final prefs = await SharedPreferences.getInstance();
-    final email = prefs.getString(_emailKey);
-
-    if (email == null) {
-      return false;
-    }
-    return true;
+    return _supabase.auth.currentUser != null;
   }
 }

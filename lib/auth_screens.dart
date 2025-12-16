@@ -38,27 +38,33 @@ class _LoginScreenState extends State<LoginScreen> {
       _isLoading = true;
     });
 
-    final success = await AuthService().login(
-      email: _emailController.text.trim(),
-      password: _passwordController.text,
-    );
-
-    setState(() {
-      _isLoading = false;
-    });
-
-    if (success && mounted) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
+    try {
+      final response = await AuthService().login(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
       );
-    } else if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Invalid email or password', style: GoogleFonts.quicksand()),
-          backgroundColor: Color(0xFFFCA5A5),
-        ),
-      );
+
+      if (response.user != null && mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Invalid email or password', style: GoogleFonts.quicksand()),
+            backgroundColor: Color(0xFFFCA5A5),
+          ),
+        );
+      }
+    }
+
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -271,36 +277,45 @@ class _SignUpScreenState extends State<SignUpScreen> {
       _isLoading = true;
     });
 
-    final success = await AuthService().signUp(
-      username: _usernameController.text.trim(),
-      email: _emailController.text.trim(),
-      password: _passwordController.text,
-    );
-
-    setState(() {
-      _isLoading = false;
-    });
-
-    if (success && mounted) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const OnboardingScreen()),
+    try {
+      final response = await AuthService().signUp(
+        username: _usernameController.text.trim(),
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
       );
+
+      if (response.user != null && mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const OnboardingScreen()),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        String message = 'Sign up failed. Please try again.';
+        if (e.toString().contains('already registered')) {
+          message = 'Email already in use';
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message, style: GoogleFonts.quicksand()),
+            backgroundColor: Color(0xFFFCA5A5),
+          ),
+        );
+      }
+    }
+
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFF6E8EA),
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Color(0xFFEF626C)),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
+      backgroundColor: Color(0xFFf6e8ea),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -315,7 +330,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
-                    Icons.person_add,
+                    Icons.favorite,
                     size: 60,
                     color: Color(0xFFEF626C),
                   ),
@@ -330,14 +345,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                 ),
                 SizedBox(height: 8),
-                Text(
-                  'Start your wellness journey today',
-                  style: GoogleFonts.quicksand(
-                    fontSize: 16,
-                    color: Color(0xFF718096),
-                  ),
-                  textAlign: TextAlign.center,
-                ),
                 SizedBox(height: 40),
 
                 Container(
@@ -528,41 +535,42 @@ class AuthCheckScreen extends StatefulWidget {
 }
 
 class _AuthCheckScreenState extends State<AuthCheckScreen> {
-  bool _isLoading = true;
-  bool _isLoggedIn = false;
-
   @override
   void initState() {
     super.initState();
-    _checkLoginStatus();
+    _checkAuth();
   }
 
-  Future<void> _checkLoginStatus() async {
-    final loggedIn = await AuthService().isLoggedIn();
-    setState(() {
-      _isLoggedIn = loggedIn;
-      _isLoading = false;
-    });
+  Future<void> _checkAuth() async {
+    await Future.delayed(Duration(milliseconds: 300));
+
+    final isLoggedIn = await AuthService().isLoggedIn();
+
+    if (mounted) {
+      if (isLoggedIn) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const WelcomeScreen()),
+        );
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return Scaffold(
-        backgroundColor: Color(0xFFF5F7FA),
-        body: Center(
-          child: CircularProgressIndicator(
-            color: Color(0xFFEF626C),
-          ),
+    return Scaffold(
+      backgroundColor: Color(0xFFf6e8ea),
+      body: Center(
+        child: CircularProgressIndicator(
+          color: Color(0xFFEF626C),
         ),
-      );
-    }
-
-    if (_isLoggedIn) {
-      return const HomeScreen();
-    } else {
-      return const WelcomeScreen();
-    }
+      ),
+    );
   }
 }
 
@@ -572,7 +580,7 @@ class WelcomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFF5F7FA),
+      backgroundColor: Color(0xFFf6e8ea),
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.all(24.0),

@@ -4,7 +4,8 @@ import 'activity_button.dart';
 import 'reframe_screen.dart';
 import 'message_screen.dart';
 import 'breathing_screen.dart';
-
+import 'balloon_game_screen.dart';
+import 'sound_game_screen.dart';
 class ActivitySelectionScreen extends StatelessWidget {
   final String emotion;
 
@@ -80,6 +81,34 @@ class ActivitySelectionScreen extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(builder: (context) => BreathingExerciseScreen(emotion: emotion)),
+                      );
+                    },
+                  ),
+                  ActivityButton(
+                    title: 'Balloon Game',
+                    description: 'Focus your mind',
+                    icon: Icons.bubble_chart,
+                    color: Color(0xFFFFB3BA),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => BalloonGameScreen(emotion: emotion),
+                        ),
+                      );
+                    },
+                  ),
+                  ActivityButton(
+                    title: 'Sound Match',
+                    description: 'Match sounds to images',
+                    icon: Icons.headphones,
+                    color: Color(0xFFBAE1FF),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => SoundGameScreen(emotion: emotion),
+                        ),
                       );
                     },
                   ),

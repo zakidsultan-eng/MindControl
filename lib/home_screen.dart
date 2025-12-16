@@ -1,12 +1,53 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'settings_screen.dart';
 import 'history_screen.dart';
 import 'emotion_screen.dart';
 import 'auth_service.dart';
 import 'auth_screens.dart';
-class HomeScreen extends StatelessWidget {
+import 'crisis_resources_screen.dart';
+
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final SupabaseClient _supabase = Supabase.instance.client;
+  String _quote = 'You look great today!';
+  String _author = '';
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchRandomQuote();
+  }
+
+  Future<void> _fetchRandomQuote() async {
+    try {
+      final response = await _supabase
+          .from('quotes')
+          .select('content, author');
+
+      if (response.isNotEmpty) {
+        final randomIndex = DateTime.now().millisecondsSinceEpoch % response.length;
+        setState(() {
+          _quote = response[randomIndex]['content'];
+          _author = response[randomIndex]['author'];
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error fetching quote: $e');
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -17,6 +58,15 @@ class HomeScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
         actions: [
           IconButton(
+            icon: Icon(Icons.support, color: Color(0xFFEF626C)),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const CrisisResourcesScreen()),
+              );
+            },
+          ),
+          IconButton(
             icon: Icon(Icons.settings, color: Color(0xFFEF626C)),
             onPressed: () {
               Navigator.push(
@@ -25,15 +75,7 @@ class HomeScreen extends StatelessWidget {
               );
             },
           ),
-          IconButton(
-            icon: Icon(Icons.history, color: Color(0xFFEF626C)),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const HistoryScreen()),
-              );
-            },
-          ),
+
           PopupMenuButton<String>(
             icon: Icon(Icons.more_vert, color: Color(0xFFEF626C)),
             onSelected: (value) async {
@@ -81,18 +123,52 @@ class HomeScreen extends StatelessWidget {
                   color: Color(0xFFEF626C),
                 ),
               ),
-              SizedBox(height: 80),
-              Text(
-                'You look great today!',
-                style: GoogleFonts.quicksand(
-                  fontSize: 40,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFFef626c),
+              SizedBox(height: 40),
+
+              GestureDetector(
+                onTap: _fetchRandomQuote,
+                child: SizedBox(
+                  height: 180,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          _isLoading ? 'Loading...' : '"$_quote"',
+                          style: GoogleFonts.quicksand(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFFef626c),
+                          ),
+                          textAlign: TextAlign.center,
+                          maxLines: 5,
+                        ),
+                      ),
+                      if (_author.isNotEmpty) ...[
+                        SizedBox(height: 10),
+                        Text(
+                          '— $_author',
+                          style: GoogleFonts.quicksand(
+                            fontSize: 16,
+                            fontStyle: FontStyle.italic,
+                            color: Color(0xFF718096),
+                          ),
+                        ),
+                      ],
+                      SizedBox(height: 6),
+                      Text(
+                        'Tap for new quote',
+                        style: GoogleFonts.quicksand(
+                          fontSize: 12,
+                          color: Color(0xFF718096).withOpacity(0.6),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                textAlign: TextAlign.center,
               ),
 
-              SizedBox(height: 105),
+              SizedBox(height: 60),
               ElevatedButton(
                 onPressed: () {
                   Navigator.push(

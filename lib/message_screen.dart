@@ -1,12 +1,43 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'rating_screen.dart';
 
 class MessageExchangeScreen extends StatelessWidget {
   final String emotion;
+  final SupabaseClient _supabase = Supabase.instance.client;
 
-  const MessageExchangeScreen({super.key, required this.emotion});
+  MessageExchangeScreen({super.key, required this.emotion});
+
+  Future<void> _submitMessage(String message) async {
+    await _supabase.from('messages').insert({
+      'content': message,
+    });
+  }
+
+  Future<String> _getRandomMessage() async {
+    final countResponse = await _supabase
+        .from('messages')
+        .select('id');
+
+    if (countResponse.isEmpty) {
+      return "You are stronger than you think";
+    }
+
+    final randomIndex = DateTime.now().millisecondsSinceEpoch % countResponse.length;
+
+    final response = await _supabase
+        .from('messages')
+        .select('content')
+        .limit(1)
+        .range(randomIndex, randomIndex);
+
+    if (response.isNotEmpty) {
+      return response[0]['content'];
+    }
+
+    return "You are stronger than you think";
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -86,7 +117,7 @@ class MessageExchangeScreen extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
                   if (messageController.text.trim().isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
@@ -100,12 +131,27 @@ class MessageExchangeScreen extends StatelessWidget {
                     return;
                   }
 
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (context) => Center(
+                      child: CircularProgressIndicator(color: Color(0xFFEF626C)),
+                    ),
+                  );
+
+                  final receivedMessage = await _getRandomMessage();
+                  await _submitMessage(messageController.text.trim());
+
+
+                  Navigator.pop(context);
+
                   Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => MessageReceivedScreen(
                         emotion: emotion,
                         userMessage: messageController.text,
+                        receivedMessage: receivedMessage,
                       ),
                     ),
                   );
@@ -126,29 +172,17 @@ class MessageExchangeScreen extends StatelessWidget {
 class MessageReceivedScreen extends StatelessWidget {
   final String emotion;
   final String userMessage;
+  final String receivedMessage;
 
   const MessageReceivedScreen({
     super.key,
     required this.emotion,
     required this.userMessage,
+    required this.receivedMessage,
   });
 
   @override
   Widget build(BuildContext context) {
-    final List<String> messages = [
-      "Remember to tell your mom you appreciate herr",
-      "Sometimes all you need is a hug",
-      "You are stronger than you think",
-      "Slow motion is faster than no motion",
-      "Remember to eat your breakfast",
-      "One step at a time",
-      "Tough times create tough people",
-      "Sometimes its the little things in life",
-    ];
-
-    final random = Random();
-    String receivedMessage = messages[random.nextInt(messages.length)];
-
     return Scaffold(
       backgroundColor: Color(0xFFf6e8ea),
       appBar: AppBar(

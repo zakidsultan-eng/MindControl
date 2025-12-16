@@ -55,6 +55,17 @@ class _HistoryScreenState extends State<HistoryScreen> {
           ? _buildEmptyState()
           : Column(
         children: [
+          Padding(
+            padding: EdgeInsets.fromLTRB(24, 16, 24, 16),
+            child: Text(
+              'You\'ve completed ${_history.length} activities',
+              style: GoogleFonts.quicksand(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF718096),
+              ),
+            ),
+          ),
           Expanded(
             child: ListView.builder(
               padding: EdgeInsets.symmetric(horizontal: 24),

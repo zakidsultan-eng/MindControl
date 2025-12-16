@@ -1,41 +1,46 @@
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'history_entry.dart';
 
 class HistoryStorage {
-  static const String _historyKey = 'history_entries';
+  final SupabaseClient _supabase = Supabase.instance.client;
 
   Future<void> addEntry(HistoryEntry entry) async {
-    final prefs = await SharedPreferences.getInstance();
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) return;
 
-    List<HistoryEntry> entries = await getEntries();
-
-    entries.add(entry);
-
-    List<Map<String, dynamic>> jsonList = [];
-    for (var i in entries) {
-      jsonList.add(i.toJson());
-    }
-
-    String jsonString = jsonEncode(jsonList);
-    await prefs.setString(_historyKey, jsonString);
+    await _supabase.from('history').insert({
+      'user_id': userId,
+      'emotion': entry.emotion,
+      'activity': entry.activity,
+      'timestamp': entry.timestamp.toIso8601String(),
+      'activity_data': entry.activityData,
+      'rating': entry.rating,
+    });
   }
 
   Future<List<HistoryEntry>> getEntries() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? entriesJson = prefs.getString(_historyKey);
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) return [];
 
-    if (entriesJson == null) {
-      return [];
-    }
-
-    final List<dynamic> decoded = jsonDecode(entriesJson);
+    final response = await _supabase
+        .from('history')
+        .select()
+        .eq('user_id', userId)
+        .order('timestamp', ascending: false);
 
     List<HistoryEntry> entries = [];
-    for (var item in decoded) {
-      entries.add(HistoryEntry.fromJson(item));
+    for (var item in response) {
+      entries.add(HistoryEntry(
+        emotion: item['emotion'],
+        activity: item['activity'],
+        timestamp: DateTime.parse(item['timestamp']),
+        activityData: item['activity_data'] != null
+            ? Map<String, dynamic>.from(item['activity_data'])
+            : null,
+        rating: item['rating'],
+      ));
     }
 
-    return entries.reversed.toList();
+    return entries;
   }
 }

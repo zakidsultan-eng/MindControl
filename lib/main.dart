@@ -1,17 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'notification_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'home_screen.dart';
 import 'onboarding_screen.dart';
 import 'auth_screens.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await SharedPreferences.getInstance();
+
+  await Supabase.initialize(
+    url: 'https://nzpsrrizoikibdvzpwlq.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im56cHNycml6b2lraWJkdnpwd2xxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ5Njc4NDgsImV4cCI6MjA4MDU0Mzg0OH0.c32r5ubqAGdUJlaY3rKadydLWjUAWNv74fl6iIzVFtI',
+  );
+
   await NotificationService().initialize();
   runApp(MindControlApp());
 }
+
+final supabase = Supabase.instance.client;
 
 class MindControlApp extends StatelessWidget {
   const MindControlApp({super.key});
@@ -50,60 +57,5 @@ class MindControlApp extends StatelessWidget {
       ),
       home: AuthCheckScreen(),
     );
-  }
-}
-
-class AppStartScreen extends StatefulWidget {
-  const AppStartScreen({super.key});
-
-  @override
-  State<AppStartScreen> createState() => _AppStartScreenState();
-}
-
-class _AppStartScreenState extends State<AppStartScreen> {
-  bool _isLoading = true;
-  bool _onboardingComplete = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _checkOnboarding();
-  }
-
-  Future<void> _checkOnboarding() async {
-    final prefs = await SharedPreferences.getInstance();
-    final complete = prefs.getBool('onboarding_complete');
-
-    bool isComplete;
-    if (complete == null) {
-      isComplete = false;
-    } else {
-      isComplete = complete;
-    }
-
-    setState(() {
-      _onboardingComplete = isComplete;
-      _isLoading = false;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_isLoading) {
-      return Scaffold(
-        backgroundColor: Color(0xFFF5F7FA),
-        body: Center(
-          child: CircularProgressIndicator(
-            color: Color(0xFFEF626C),
-          ),
-        ),
-      );
-    }
-
-    if (_onboardingComplete) {
-      return HomeScreen();
-    } else {
-      return OnboardingScreen();
-    }
   }
 }
